@@ -3,7 +3,7 @@
 
 std::string dir = "test1";
 std::string name = "result.jpg";
-int result_h = 4000;
+int result_h = 1000;
 bool do_hdr = !true;
 int hdr_number = 3;
 std::string image_suffix = "jpg";

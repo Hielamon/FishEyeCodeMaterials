@@ -149,6 +149,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="CameraModel.h" />
+    <ClInclude Include="ModelData.h" />
     <ClInclude Include="Rotation.h" />
   </ItemGroup>
   <ItemGroup>

@@ -70,7 +70,7 @@ namespace CircleFish
 		//std::cout << "b = " << cameras[0].b << std::endl;
 		//std::cout << "c = " << cameras[0].c << std::endl;
 		//std::cout << "fov = " << cameras[0].fov << std::endl;
-		//_showPairInfo(images, pairinfos, 1.0);
+		_showPairInfo(images, pairinfos, 1.0);
 	}
 
 	//初始化计算相机相对姿态R矩阵，如果鱼眼图像覆盖360以上，或者说满足大致的4张90度转条件，返回true，否则返回false
@@ -200,6 +200,12 @@ namespace CircleFish
 
 	void EstimateFish::_alignCameras(std::vector<FishCamera> &cameras, std::vector<int> &index)
 	{
+		cv::Vec3d rvec(0.0, 1.0, 0.0);
+		rvec *= (-CV_PI*0.5);
+		cv::Mat rotate90;
+		cv::Rodrigues(rvec, rotate90);
+		cameras[index[0]].R *= rotate90;
+
 		cv::Mat pre_R = cameras[index[0]].R.clone();
 
 		for (size_t i = 1; i < index.size(); i++)

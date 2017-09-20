@@ -109,11 +109,6 @@ void TestSinRefineCallback()
 
 int main(int argc, char *argv[])
 {
-	TestSinRefineCallback();
 
-	/*std::string filename = "test.py";
-	std::string command = "python ";
-	command += filename;
-	system(command.c_str());*/
 	return 0;
 }

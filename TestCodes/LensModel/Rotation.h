@@ -1,7 +1,6 @@
 #pragma once
 #include <OpencvCommon.h>
 
-
 class Rotation
 {
 public:

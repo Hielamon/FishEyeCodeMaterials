@@ -1,16 +1,9 @@
 #include <iostream>
 #include "Rotation.h"
 #include "CameraModel.h"
+#include "ModelData.h"
 
-class ModelData
-{
-public:
-	ModelData() {}
-	~ModelData() {}
-
-private:
-
-};
+using namespace FishEye;
 
 
 void randomImagePointPairs(std::shared_ptr<CameraModel> &cam, const Rotation &rot, int num, 
@@ -48,7 +41,7 @@ void randomImagePointPairs(std::shared_ptr<CameraModel> &cam, const Rotation &ro
 
 void TestInversePolynomial()
 {
-	PTGUIFishEye ptgui;
+	FishEye::PTGUIFish ptgui;
 	double a, b, c;
 	cv::Mat result(1000, 1000, CV_8UC3, cv::Scalar(0));
 	ptgui.invertABCBySample(0.3, 0.1, 0.5, a, b, c);
@@ -60,22 +53,22 @@ void TestInversePolynomial()
 	cv::imwrite("result.jpg", result);
 }
 
-int main(int argc, char *argv[])
+void ProduceDataShow() 
 {
 	Rotation rotation(CV_PI * 0.4, CV_PI * 0.5);
-	std::shared_ptr<EquidistantFishEye> pEquisolid = std::make_shared<EquidistantFishEye>();
+	std::shared_ptr<FishEye::Equidistant> pEquisolid = std::make_shared<FishEye::Equidistant>();
 	pEquisolid->fov = CV_PI*1.3;
-	pEquisolid->f = 400;
-	pEquisolid->u0 = pEquisolid->f * pEquisolid->fov * 0.5 + 1;
-	pEquisolid->v0 = pEquisolid->f * pEquisolid->fov * 0.5 + 1;
-	int numPt = 500;
+	pEquisolid->fx = pEquisolid->fy = 400;
+	pEquisolid->u0 = pEquisolid->fx * pEquisolid->fov * 0.5 + 50;
+	pEquisolid->v0 = pEquisolid->fy * pEquisolid->fov * 0.5 + 50;
+	int numPt = 1000;
 	std::vector<cv::Point2d> vImgPt1, vImgPt2;
 	std::vector<cv::Point3d> vSpherePt1, vSpherePt2;
 	randomImagePointPairs(std::static_pointer_cast<CameraModel>(pEquisolid),
 						  rotation, numPt, vImgPt1, vImgPt2, vSpherePt1, vSpherePt2);
 
-	cv::Mat showResult1(pEquisolid->u0 * 2 + 2, pEquisolid->v0 * 2 + 2, CV_8UC3, cv::Scalar(0));
-	cv::Mat showResult2(pEquisolid->u0 * 2 + 2, pEquisolid->v0 * 2 + 2, CV_8UC3, cv::Scalar(0));
+	cv::Mat showResult1(pEquisolid->u0 * 2 + 2, pEquisolid->v0 * 2 + 2, CV_8UC3, cv::Scalar(250, 250, 250));
+	cv::Mat showResult2(pEquisolid->u0 * 2 + 2, pEquisolid->v0 * 2 + 2, CV_8UC3, cv::Scalar(250, 250, 250));
 
 	for (size_t i = 0; i < numPt; i++)
 	{
@@ -99,6 +92,29 @@ int main(int argc, char *argv[])
 		fs << std::endl;
 	}
 	fs.close();
+}
 
+int main(int argc, char *argv[])
+{
+	
+	int pairNum = 300, trialNum = 2;
+	double minFocal = 400, maxFocal = 600;
+	double minFov = CV_PI * (160 / 180.0), maxFov = CV_PI * (200 / 180.0);
+	double minAngle = CV_PI * (70 / 180.0), maxAngle = CV_PI * (110 / 180.0);
+	
+	std::ofstream fs("SyntheticData.txt", std::ios::out);
+	ModelDataProducer producer;
+	for (size_t i = 0; i < trialNum; i++)
+	{
+		std::shared_ptr<Equidistant> pEquisolid = std::make_shared<Equidistant>();
+		std::shared_ptr<Rotation> pRotation = std::make_shared<Rotation>(minAngle, maxAngle);
+
+
+		pEquisolid->fov = RandomInRange(minFov, maxFov);
+		pEquisolid->fx = pEquisolid->fy = RandomInRange(minFocal, maxFocal);
+		producer.produce(std::static_pointer_cast<CameraModel>(pEquisolid), pRotation, pairNum);
+		producer.writeToFile(fs);
+	}
+	fs.close();
 	return 0;
 }

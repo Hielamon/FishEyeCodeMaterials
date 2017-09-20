@@ -94,9 +94,45 @@ namespace CircleFish
 					}
 				}
 
+
+
+				if (i == 3 && 0)
+				{
+					ss.str("");
+					ss << "overlap_right_origin_" << i << ".jpg";
+					cv::imwrite(ss.str(), cp1);
+
+					//draw grid
+					int colDiv = 8;
+					int widthDiv = cp1.cols / colDiv;
+					int rowDiv = cp1.rows / widthDiv;
+					cv::Scalar color(0, 0, 255);
+					int thickness = 1;
+					for (size_t j = 1; j <= colDiv; j++)
+					{
+						cv::line(cp1, cv::Point(j*widthDiv, 0), cv::Point(j*widthDiv, cp1.rows - 1), color, thickness);
+					}
+					for (size_t j = 1; j <= rowDiv; j++)
+					{
+						cv::line(cp1, cv::Point(0, j*widthDiv), cv::Point(cp1.cols - 1, j*widthDiv), color, thickness);
+					}
+
+				}
+
 				cv::convertMaps(map_add, cv::Mat(), map1, map2, CV_16SC2);
 				cv::remap(cp1, cp1_t, map1, map2, CV_INTER_LINEAR);
 				cv::remap(cp1_mask, cp1_mask_t, map1, map2, CV_INTER_LINEAR);
+
+				if (i == 3)
+				{
+					ss.str("");
+					ss << "overlap_right_" << i << ".jpg";
+					cv::imwrite(ss.str(), cp1);
+					ss.str("");
+					ss << "overlap_right_warped_" << i << ".jpg";
+					cv::imwrite(ss.str(), cp1_t);
+				}
+				
 
 				cp1_t.copyTo(blend_warpeds[right_idx](right_roi_add));
 				cp1_mask_t.copyTo(blend_warped_masks[right_idx](right_roi_add));
@@ -142,9 +178,43 @@ namespace CircleFish
 					}
 				}
 
+				if (i == 3 && 0)
+				{
+					ss.str("");
+					ss << "overlap_left_origin_" << i << ".jpg";
+					cv::imwrite(ss.str(), cp2);
+
+					//draw grid
+					int colDiv = 8;
+					int widthDiv = cp2.cols / colDiv;
+					int rowDiv = cp2.rows / widthDiv;
+					cv::Scalar color(0, 0, 255);
+					int thickness = 1;
+					for (size_t j = 1; j <= colDiv; j++)
+					{
+						cv::line(cp2, cv::Point(j*widthDiv, 0), cv::Point(j*widthDiv, cp2.rows - 1), color, thickness);
+					}
+					for (size_t j = 1; j <= rowDiv; j++)
+					{
+						cv::line(cp2, cv::Point(0, j*widthDiv), cv::Point(cp2.cols - 1, j*widthDiv), color, thickness);
+					}
+
+				}
+
 				cv::convertMaps(map_add, cv::Mat(), map1, map2, CV_16SC2);
 				cv::remap(cp2, cp2_t, map1, map2, CV_INTER_LINEAR);
 				cv::remap(cp2_mask, cp2_mask_t, map1, map2, CV_INTER_LINEAR);
+
+				if (i == 3)
+				{
+					ss.str("");
+					ss << "overlap_left_" << i << ".jpg";
+					cv::imwrite(ss.str(), cp2);
+					ss.str("");
+					ss << "overlap_left_warped_" << i << ".jpg";
+					cv::imwrite(ss.str(), cp2_t);
+				}
+				
 
 				cp2_t.copyTo(blend_warpeds[left_idx](left_roi_add));
 				cp2_mask_t.copyTo(blend_warped_masks[left_idx](left_roi_add));
@@ -156,6 +226,8 @@ namespace CircleFish
 						
 				}
 			}
+
+
 
 		}
 
@@ -474,6 +546,13 @@ namespace CircleFish
 		for (size_t i = 0; i < num_image; i++)
 		{
 			int index_temp = index[i];
+			{
+				std::stringstream ss;
+				std::string name = "src_";
+				ss << name << i << ".jpg";
+				cv::imwrite(ss.str(), src_arr[index_temp]);
+			}
+			
 			double *R_ptr = (double *)cameras[index_temp].R.data;
 
 			border_pt[0] = cv::Point3d(R_ptr[0] * right_pt.x + R_ptr[6] * right_pt.z, R_ptr[1] * right_pt.x + R_ptr[7] * right_pt.z, R_ptr[2] * right_pt.x + R_ptr[8] * right_pt.z);
@@ -511,26 +590,22 @@ namespace CircleFish
 
 			biggest_rois.push_back(roi_temp);
 			
-			//for(size_t j = 0; j < roi_temp.size(); j++)
-			//{
-			//	cv::Mat map,map1,map2;
-			//	cv::Mat warped_temp;
-			//	buildMap(roi_temp[j], sphere_mini, cameras[index_temp], map);
-			//	int n_width = std::ceil(roi_temp[j].width * sphere_mini_aspect);
-			//	int n_lp = roi_temp[j].x * sphere_mini_aspect;
-			//	cv::resize(map, map, cv::Size(n_width, roi_temp[j].height * sphere_mini_aspect));
-			//	cv::convertMaps(map, cv::Mat(), map1, map2, CV_16SC2);
-			//	cv::remap(src_arr[index_temp], warped_temp, map1, map2, cv::INTER_LINEAR);
-			//	
-			//	std::stringstream ss;
-			//	std::string name = "warped_";
-			//	ss << name << i << "_"<< j<<".jpg";
-			//	std::cout<<"temp_name = "<<ss.str()<<std::endl;
-			//	cv::imwrite(ss.str(),warped_temp);
-			//	ss.str("");
-			//	ss<<"src_"<<i<<"_"<<j<<".jpg";
-			//	cv::imwrite(ss.str(),src_arr[index_temp]);
-			//}
+			for(size_t j = 0; j < roi_temp.size(); j++)
+			{
+				cv::Mat map,map1,map2;
+				cv::Mat warped_temp;
+				buildMap(roi_temp[j], sphere_mini, cameras[index_temp], map);
+				int n_width = std::ceil(roi_temp[j].width * sphere_mini_aspect);
+				int n_lp = roi_temp[j].x * sphere_mini_aspect;
+				cv::resize(map, map, cv::Size(n_width, roi_temp[j].height * sphere_mini_aspect));
+				cv::convertMaps(map, cv::Mat(), map1, map2, CV_16SC2);
+				cv::remap(src_arr[index_temp], warped_temp, map1, map2, cv::INTER_LINEAR);
+				
+				std::stringstream ss;
+				std::string name = "warped_";
+				ss << name << i << "_"<< j<<".jpg";
+				cv::imwrite(ss.str(),warped_temp);
+			}
 						
 				
 				
@@ -601,6 +676,11 @@ namespace CircleFish
 				cv::convertMaps(map, cv::Mat(), map1, map2, CV_16SC2);
 				cv::remap(src_arr[index_temp], warped_temp, map1, map2, cv::INTER_LINEAR);
 				blend_warpeds.push_back(warped_temp);
+
+				std::stringstream ss;
+				std::string name = "warped_clipped_";
+				ss << name << i << "_" << j << ".jpg";
+				cv::imwrite(ss.str(), warped_temp);
 
 				cv::remap(origin_blend_mask, warped_temp, map1, map2, cv::INTER_NEAREST);
 				blend_warped_masks.push_back(warped_temp);

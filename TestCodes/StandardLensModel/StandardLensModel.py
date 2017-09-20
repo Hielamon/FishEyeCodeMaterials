@@ -55,7 +55,7 @@ if __name__ == "__main__":
     plt.ylim(0, np.max(rStereo))
     plt.legend()
     plt.grid()
-    plt.title("The Standard FishEye Lenses($f=200$)")
+    plt.title("The Classic FishEye Camera Models($f=1$)")
     plt.xlabel(r"$\theta (rad)$")
     plt.ylabel(r"$r_d$")
 
