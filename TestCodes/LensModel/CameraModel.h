@@ -6,14 +6,9 @@ class CameraModel
 public:
 	CameraModel() 
 	{
-		//fov = CV_PI * 0.5;
+		fov = CV_PI * 0.5;
 		u0 = v0 = 0;
 		fx = fy = 1;
-		//vpParameter.push_back(&fov);
-		vpParameter.push_back(&u0);
-		vpParameter.push_back(&v0);
-		vpParameter.push_back(&fx);
-		vpParameter.push_back(&fy);
 	}
 	~CameraModel() {}
 
@@ -24,12 +19,11 @@ public:
 		double y = (-imgPt.y + v0) / fy;
 		double r_dist = sqrt(x*x + y*y);
 
-		double theta, phi;
+		double theta, phi = atan2(y, x);
 		theta = atan2(y, x);
 
-		if (!inverseProject(r_dist, phi))
+		if (!inverseProject(r_dist, phi) || phi * 2 > fov)
 		{
-			std::cout << "Warning: Invalid mapping in mapI2S" << std::endl;
 			return false;
 		}
 
@@ -45,11 +39,7 @@ public:
 		double theta, phi, r_dist;
 		theta = atan2(spherePt.y, spherePt.x);
 		phi = atan2(sqrt(spherePt.x*spherePt.x + spherePt.y*spherePt.y), spherePt.z);
-		if (/*phi * 2 > fov || */!project(phi, r_dist))
-		{
-			std::cout << "Warning: Invalid mapping in mapS2I" << std::endl;
-			return false;
-		}
+		if (phi * 2 > fov || !project(phi, r_dist))return false;
 
 		imgPt.x = r_dist*cos(theta)*fx + u0;
 		imgPt.y = -r_dist*sin(theta)*fy + v0;
@@ -60,7 +50,7 @@ public:
 	virtual bool inverseProject(const double& radius, double &angle)
 	{
 		angle = atan(radius);
-		if (angle < 0 /*|| angle > fov*0.5 */|| angle >= CV_PI*0.5)
+		if (angle < 0 || angle > fov*0.5 || angle >= CV_PI*0.5)
 		{
 			return false;
 		}
@@ -71,7 +61,7 @@ public:
 	//projecting the incident angle to the imaging radius
 	virtual bool project(const double& angle, double &radius)
 	{
-		if (angle < 0 /*|| angle > fov*0.5 */|| angle >= CV_PI*0.5)
+		if (angle < 0 || angle > fov*0.5 || angle >= CV_PI*0.5)
 		{
 			return false;
 		}
@@ -85,18 +75,9 @@ public:
 		return "Default";
 	}
 
-	//double fov;
+	double fov;
 	double u0, v0;
 	double fx, fy;
-	//double radius;
-
-	//not used actually, when we limit that the fx = fy, the changing of f by setP
-	//double f;
-
-	//The array of parameters point, which is arrange as
-	//vParameter[0:5] = {&fov, &u0, &v0, &fx, &fy}
-	//which can be extended in the derive class
-	std::vector<double*> vpParameter;
 };
 
 namespace FishEye
@@ -134,7 +115,6 @@ namespace FishEye
 		return result;
 	}
 
-	//this class is actually not be used in our experiment
 	class PTGUIFish : public CameraModel
 	{
 	public:
@@ -321,7 +301,7 @@ namespace FishEye
 		virtual bool inverseProject(const double& radius, double &angle)
 		{
 			angle = radius;
-			if (angle < 0 /*|| angle > fov*0.5 */|| angle > CV_PI)
+			if (angle < 0 || angle > fov*0.5 || angle > CV_PI)
 			{
 				return false;
 			}
@@ -332,7 +312,7 @@ namespace FishEye
 		//projecting the incident angle to the imaging radius
 		virtual bool project(const double& angle, double &radius)
 		{
-			if (angle < 0 /*|| angle > fov*0.5*/ || angle > CV_PI)
+			if (angle < 0 || angle > fov*0.5 || angle > CV_PI)
 			{
 				return false;
 			}
@@ -357,7 +337,7 @@ namespace FishEye
 		virtual bool inverseProject(const double& radius, double &angle)
 		{
 			angle = asin(radius * 0.5) * 2;
-			if (angle < 0 /*|| angle > fov*0.5 */|| angle > CV_PI)
+			if (angle < 0 || angle > fov*0.5 || angle > CV_PI)
 			{
 				return false;
 			}
@@ -368,7 +348,7 @@ namespace FishEye
 		//projecting the incident angle to the imaging radius
 		virtual bool project(const double& angle, double &radius)
 		{
-			if (angle < 0 /*|| angle > fov*0.5 */|| angle > CV_PI)
+			if (angle < 0 || angle > fov*0.5 || angle > CV_PI)
 			{
 				return false;
 			}
@@ -393,7 +373,7 @@ namespace FishEye
 		virtual bool inverseProject(const double& radius, double &angle)
 		{
 			angle = atan(radius * 0.5) * 2;
-			if (angle < 0 /*|| angle > fov*0.5 */|| angle > CV_PI)
+			if (angle < 0 || angle > fov*0.5 || angle > CV_PI)
 			{
 				return false;
 			}
@@ -404,7 +384,7 @@ namespace FishEye
 		//projecting the incident angle to the imaging radius
 		virtual bool project(const double& angle, double &radius)
 		{
-			if (angle < 0 /*|| angle > fov*0.5 */|| angle > CV_PI)
+			if (angle < 0 || angle > fov*0.5 || angle > CV_PI)
 			{
 				return false;
 			}
@@ -423,14 +403,7 @@ namespace FishEye
 	class PolynomialAngle : public CameraModel
 	{
 	public:
-		PolynomialAngle() 
-		{
-			//add extra parameters reference
-			k1 = 1;
-			k2 = 0;
-			vpParameter.push_back(&k1);
-			vpParameter.push_back(&k2);
-		}
+		PolynomialAngle() {}
 		~PolynomialAngle() {}
 
 		//projecting the imaging radius to the incident angle
@@ -482,7 +455,7 @@ namespace FishEye
 				}
 			}
 			
-			if (angle < 0 /*|| angle > fov*0.5*/ || angle > CV_PI)
+			if (angle < 0 || angle > fov*0.5 || angle > CV_PI)
 			{
 				return false;
 			}
@@ -494,7 +467,7 @@ namespace FishEye
 		//radius = k1 * (angle) + k2 * (angle)^3
 		virtual bool project(const double& angle, double &radius)
 		{
-			if (angle < 0 /*|| angle > fov*0.5 */|| angle > CV_PI)
+			if (angle < 0 || angle > fov*0.5 || angle > CV_PI)
 			{
 				return false;
 			}
@@ -516,13 +489,7 @@ namespace FishEye
 	class PolynomialRadius : public CameraModel
 	{
 	public:
-		PolynomialRadius() 
-		{
-			a0 = 1;
-			a2 = 0;
-			vpParameter.push_back(&a0);
-			vpParameter.push_back(&a2);
-		}
+		PolynomialRadius() {}
 		~PolynomialRadius() {}
 
 		//projecting the imaging radius to the incident angle
@@ -531,7 +498,7 @@ namespace FishEye
 		{
 			angle = atan2(radius, a0 + a2*radius*radius);
 
-			if (angle < 0 /*|| angle > fov*0.5*/ || angle > CV_PI)
+			if (angle < 0 || angle > fov*0.5 || angle > CV_PI)
 			{
 				return false;
 			}
@@ -544,7 +511,7 @@ namespace FishEye
 		//rd^2*a2*sin(theta) - rd*cos(theta) + a0*sin(theta) = 0
 		virtual bool project(const double& angle, double &radius)
 		{
-			if (angle < 0 /*|| angle > fov*0.5*/ || angle > CV_PI)
+			if (angle < 0 || angle > fov*0.5 || angle > CV_PI)
 			{
 				return false;
 			}
@@ -578,13 +545,7 @@ namespace FishEye
 	class GeyerModel : public CameraModel
 	{
 	public:
-		GeyerModel() 
-		{
-			l = 0;
-			m = 1;
-			vpParameter.push_back(&l);
-			vpParameter.push_back(&m);
-		}
+		GeyerModel() {}
 		~GeyerModel() {}
 
 		//projecting the imaging radius to the incident angle
@@ -615,7 +576,7 @@ namespace FishEye
 					double left = d + e * cosValue;
 					double right = sin(tmpAngle);
 					if (left * right >= 0 && tmpAngle >= 0
-						/*&& tmpAngle <= fov*0.5 */&&tmpAngle < CV_PI)
+						&& tmpAngle <= fov*0.5 &&tmpAngle < CV_PI)
 					{
 						angle = tmpAngle;
 						unique = !unique;
@@ -631,7 +592,7 @@ namespace FishEye
 		//rd = (m + l)*sin(theta) / ( l + cos(theta))
 		virtual bool project(const double& angle, double &radius)
 		{
-			if (angle < 0 /*|| angle > fov*0.5*/ || angle > CV_PI)
+			if (angle < 0 || angle > fov*0.5 || angle > CV_PI)
 			{
 				return false;
 			}
@@ -645,42 +606,10 @@ namespace FishEye
 		{
 			return "GeyerModel";
 		}
-
-		double l, m;
+		double m, l;
 	};
 
 	
-}
-
-inline std::shared_ptr<CameraModel> createCameraModel(const std::string &typeName)
-{
-	std::shared_ptr<CameraModel> result = std::make_shared<CameraModel>();
-	if (typeName == "Equidistant")
-	{
-		result = std::static_pointer_cast<CameraModel>(std::make_shared<FishEye::Equidistant>());
-	}
-	else if (typeName == "Equisolid")
-	{
-		result = std::static_pointer_cast<CameraModel>(std::make_shared<FishEye::Equisolid>());
-	}
-	else if (typeName == "Stereographic")
-	{
-		result = std::static_pointer_cast<CameraModel>(std::make_shared<FishEye::Stereographic>());
-	}
-	else if (typeName == "PolynomialAngle")
-	{
-		result = std::static_pointer_cast<CameraModel>(std::make_shared<FishEye::PolynomialAngle>());
-	}
-	else if (typeName == "PolynomialRadius")
-	{
-		result = std::static_pointer_cast<CameraModel>(std::make_shared<FishEye::PolynomialRadius>());
-	}
-	else if (typeName == "GeyerModel")
-	{
-		result = std::static_pointer_cast<CameraModel>(std::make_shared<FishEye::GeyerModel>());
-	}
-
-	return result;
 }
 
 

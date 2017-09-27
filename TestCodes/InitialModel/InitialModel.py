@@ -100,8 +100,8 @@ def LeastSquare(A, b):
     return result[0]
 
 if __name__ == "__main__":
-    #print(np.arctan2(1.0, 0.0));
-    #print(GetInitData(np.pi * 0.5, Orthographic)) 
+    print(np.arctan2(1.0, 0.0));
+    print(GetInitData(np.pi * 0.5, Orthographic)) 
     fig = plt.figure()
     scaleFigure(fig, 1.28)
     

@@ -53,7 +53,7 @@ public:
 		std::string typeName = mpCam->getTypeName();
 		fs << mcount << " " << typeName << std::endl;
 		fs << mpCam->fov << " " << mpCam->fx << " " << mpCam->fy << " " << mpCam->u0 << " " << mpCam->v0 << std::endl;
-		fs << mpRot->axisAngle[0] << " " << mpRot->axisAngle[1] << " " << mpRot->axisAngle[2] << std::endl;
+		fs << mpRot->axis[0] << " " << mpRot->axis[1] << " " << mpRot->axis[2] << " " << mpRot->angle << std::endl;
 		for (size_t i = 0; i < mcount; i++)
 		{
 			cv::Point2d &imgPt1 = mvImgPt1[i], &imgPt2 = mvImgPt2[i];
@@ -64,31 +64,7 @@ public:
 		}
 	}
 
-
-	//note that the fs must be matched to the ModelDataProducer
-	void readFromFile(std::ifstream &fs)
-	{
-		std::string typeName;
-		fs >> mcount >> typeName;
-		mpCam = createCameraModel(typeName);
-		fs >> mpCam->fov >> mpCam->fx >> mpCam->fy >> mpCam->u0 >> mpCam->v0;
-		mpRot = std::make_shared<Rotation>();
-		fs >> mpRot->axisAngle[0] >> mpRot->axisAngle[1] >> mpRot->axisAngle[2];
-		mvImgPt1.resize(mcount); 
-		mvImgPt2.resize(mcount);
-		mvSpherePt1.resize(mcount);
-		mvSpherePt2.resize(mcount);
-		for (size_t i = 0; i < mcount; i++)
-		{
-			cv::Point2d &imgPt1 = mvImgPt1[i], &imgPt2 = mvImgPt2[i];
-			cv::Point3d &spherePt1 = mvSpherePt1[i], &spherePt2 = mvSpherePt2[i];
-			fs >> imgPt1.x >> imgPt1.y >> imgPt2.x >> imgPt2.y;
-			fs >> spherePt1.x >> spherePt1.y >> spherePt1.z >>
-				spherePt2.x >> spherePt2.y >> spherePt2.z;
-		}
-	}
-
-//private:
+private:
 	std::shared_ptr<CameraModel> mpCam;
 	std::shared_ptr<Rotation> mpRot;
 	std::vector<cv::Point2d> mvImgPt1, mvImgPt2;
