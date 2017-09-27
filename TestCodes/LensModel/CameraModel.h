@@ -135,7 +135,7 @@ namespace FishEye
 	}
 
 	//this class is actually not be used in our experiment
-	/*(class PTGUIFish : public CameraModel
+	class PTGUIFish : public CameraModel
 	{
 	public:
 		PTGUIFish() {};
@@ -309,7 +309,7 @@ namespace FishEye
 
 			return x1;
 		}
-	};*/
+	};
 
 	class Equidistant : public CameraModel
 	{
