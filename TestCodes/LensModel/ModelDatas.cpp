@@ -103,13 +103,12 @@ int main(int argc, char *argv[])
 	double minAngle = CV_PI * (70 / 180.0), maxAngle = CV_PI * (110 / 180.0);
 	
 	std::ofstream fs("SyntheticData.txt", std::ios::out);
+	fs << trialNum << std::endl;
 	ModelDataProducer producer;
 	for (size_t i = 0; i < trialNum; i++)
 	{
 		std::shared_ptr<Equidistant> pEquisolid = std::make_shared<Equidistant>();
 		std::shared_ptr<Rotation> pRotation = std::make_shared<Rotation>(minAngle, maxAngle);
-
-
 		pEquisolid->fov = RandomInRange(minFov, maxFov);
 		pEquisolid->fx = pEquisolid->fy = RandomInRange(minFocal, maxFocal);
 		producer.produce(std::static_pointer_cast<CameraModel>(pEquisolid), pRotation, pairNum);

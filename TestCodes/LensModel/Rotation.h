@@ -1,5 +1,6 @@
 #pragma once
 #include <OpencvCommon.h>
+#include <opencv2/calib3d/calib3d.hpp>
 
 class Rotation
 {
@@ -8,22 +9,49 @@ public:
 	Rotation(double minAngle = 0.0, double maxAngle = CV_2PI)
 	{
 		assert(maxAngle >= minAngle);
-		axis = _randomAxis();
+		cv::Vec3d axis = _randomAxis();
 		double ratio = rand() / double(RAND_MAX);
-		angle = minAngle + ratio * (maxAngle - minAngle);
+		double angle = minAngle + ratio * (maxAngle - minAngle);
 
-		R = _axisAngleToMatrix(axis, angle);
+		axisAngle = axis * angle;
+		cv::Rodrigues(axisAngle, R);
+		//R = _axisAngleToMatrix(axis, angle);
 	}
 
 	Rotation(const cv::Vec3d &ax, double radian)
 	{
-		axis[0] = ax[0]; axis[1] = ax[1]; axis[2] = ax[2];
-		angle = radian;
-		R = _axisAngleToMatrix(ax, radian);
+		axisAngle = ax * radian;
+		cv::Rodrigues(axisAngle, R);
+		//R = _axisAngleToMatrix(axis, angle);
 	}
 
-	cv::Vec3d axis;
-	double angle;
+	Rotation(const cv::Vec3d &_axisAngle)
+	{
+		updataRotation(_axisAngle);
+	}
+
+	Rotation(const cv::Mat &_R)
+	{
+		updataRotation(_R);
+	}
+
+	void updataRotation(const cv::Vec3d &_axisAngle)
+	{
+		axisAngle = _axisAngle;
+		
+		cv::Rodrigues(axisAngle, R);
+		/*double radian = cv::norm(_axisAngle);
+		cv::Vec3d ax = _axisAngle * (1.0 / radian);
+		R = _axisAngleToMatrix(ax, radian);*/
+	}
+
+	void updataRotation(const cv::Mat &_R)
+	{
+		_R.copyTo(R);
+		cv::Rodrigues(R, axisAngle);
+	}
+
+	cv::Vec3d axisAngle;
 	cv::Mat R;
 
 private:
@@ -36,6 +64,7 @@ private:
 		return cv::Vec3d(sin(phi)*cos(theta), sin(phi)*sin(theta), cos(phi));
 	}
 
+	//this function is deprecated replaced by cv::Rodrigues
 	//axis-angle to rotation matrix formula follow
 	//http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToMatrix/
 	cv::Mat _axisAngleToMatrix(const cv::Vec3d &ax, double &radian)
