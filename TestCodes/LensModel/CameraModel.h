@@ -6,7 +6,7 @@ class CameraModel
 public:
 	CameraModel() 
 	{
-		//fov = CV_PI * 0.5;
+		fov = CV_PI * 0.5;
 		u0 = v0 = 0;
 		fx = fy = 1;
 		//vpParameter.push_back(&fov);
@@ -85,7 +85,7 @@ public:
 		return "Default";
 	}
 
-	//double fov;
+	double fov;
 	double u0, v0;
 	double fx, fy;
 	//double radius;
