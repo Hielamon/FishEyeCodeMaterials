@@ -41,8 +41,11 @@ void randomImagePointPairs(std::shared_ptr<CameraModel> &cam, const Rotation &ro
 
 int main(int argc, char *argv[])
 {
+
 	
 	int pairNum = 300, trialNum = 500;
+	double sigma = 0.0, translateLen = 0.0;
+	
 	std::string classicModelName[3] = { "Equidistant", "Equisolid", "Stereographic" };
 	double minFocal = 400, maxFocal = 600;
 	double minFov = CV_PI * (160 / 180.0), maxFov = CV_PI * (200 / 180.0);

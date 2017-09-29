@@ -225,6 +225,7 @@ int main(int argc, char *argv[])
 			vMask[0] = vMask[1] = 0;
 
 			std::string logFileName = iter->first + "_error.txt";
+			//std::string logFileName;
 			Ptr<FishModelRefineCallback> cb = makePtr<FishModelRefineCallback>(pModelData, pModel, pRot, vMask);
 			Ptr<LMSolver> levmarpPtr = customCreateLMSolver(cb,	200, FLT_EPSILON, FLT_EPSILON, logFileName);
 
