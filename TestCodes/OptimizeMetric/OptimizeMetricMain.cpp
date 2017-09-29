@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
 			levmarpPtr->run(param);
 		}
 
-		//system("py -3 ../DrawErrorCurve/DrawErrorCurve.py");
+		system("py -3 ../DrawErrorCurve/DrawErrorCurve.py");
 	}
 	return 0;
 }
