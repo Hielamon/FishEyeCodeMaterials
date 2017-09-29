@@ -148,7 +148,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="levmarq.cpp" />
     <ClCompile Include="OptimizeMetricMain.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="precomp.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

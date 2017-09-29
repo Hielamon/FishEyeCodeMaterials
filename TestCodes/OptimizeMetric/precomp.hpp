@@ -50,17 +50,10 @@
 
 #include "opencv2/core/ocl.hpp"
 
-#ifdef HAVE_TEGRA_OPTIMIZATION
-#include "opencv2/calib3d/calib3d_tegra.hpp"
-#else
-#define GET_OPTIMIZED(func) (func)
-#endif
 
 
 namespace cv
 {
-
-int RANSACUpdateNumIters( double p, double ep, int modelPoints, int maxIters );
 
 class CV_EXPORTS LMSolver : public Algorithm
 {
@@ -76,70 +69,7 @@ public:
     virtual int run(InputOutputArray _param0) const = 0;
 };
 
-CV_EXPORTS Ptr<LMSolver> createLMSolver(const Ptr<LMSolver::Callback>& cb, int maxIters);
-
-class CV_EXPORTS PointSetRegistrator : public Algorithm
-{
-public:
-    class CV_EXPORTS Callback
-    {
-    public:
-        virtual ~Callback() {}
-        virtual int runKernel(InputArray m1, InputArray m2, OutputArray model) const = 0;
-        virtual void computeError(InputArray m1, InputArray m2, InputArray model, OutputArray err) const = 0;
-        virtual bool checkSubset(InputArray, InputArray, int) const { return true; }
-    };
-
-    virtual void setCallback(const Ptr<PointSetRegistrator::Callback>& cb) = 0;
-    virtual bool run(InputArray m1, InputArray m2, OutputArray model, OutputArray mask) const = 0;
-};
-
-CV_EXPORTS Ptr<PointSetRegistrator> createRANSACPointSetRegistrator(const Ptr<PointSetRegistrator::Callback>& cb,
-                                                                    int modelPoints, double threshold,
-                                                                    double confidence=0.99, int maxIters=1000 );
-
-CV_EXPORTS Ptr<PointSetRegistrator> createLMeDSPointSetRegistrator(const Ptr<PointSetRegistrator::Callback>& cb,
-                                                                   int modelPoints, double confidence=0.99, int maxIters=1000 );
-
-template<typename T> inline int compressElems( T* ptr, const uchar* mask, int mstep, int count )
-{
-    int i, j;
-    for( i = j = 0; i < count; i++ )
-        if( mask[i*mstep] )
-        {
-            if( i > j )
-                ptr[j] = ptr[i];
-            j++;
-        }
-    return j;
-}
-
-static inline bool haveCollinearPoints( const Mat& m, int count )
-{
-    int j, k, i = count-1;
-    const Point2f* ptr = m.ptr<Point2f>();
-
-    // check that the i-th selected point does not belong
-    // to a line connecting some previously selected points
-    // also checks that points are not too close to each other
-    for( j = 0; j < i; j++ )
-    {
-        double dx1 = ptr[j].x - ptr[i].x;
-        double dy1 = ptr[j].y - ptr[i].y;
-        for( k = 0; k < j; k++ )
-        {
-            double dx2 = ptr[k].x - ptr[i].x;
-            double dy2 = ptr[k].y - ptr[i].y;
-            if( fabs(dx2*dy1 - dy2*dx1) <= FLT_EPSILON*(fabs(dx1) + fabs(dy1) + fabs(dx2) + fabs(dy2)))
-                return true;
-        }
-    }
-    return false;
-}
-
+Ptr<LMSolver> customCreateLMSolver(const Ptr<LMSolver::Callback>& cb, int maxIters, double _epsx, double _epsf, std::string _logFileName);
 } // namespace cv
-
-int checkChessboard(const cv::Mat & img, const cv::Size & size);
-int checkChessboardBinary(const cv::Mat & img, const cv::Size & size);
 
 #endif

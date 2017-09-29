@@ -46,13 +46,13 @@ public:
 		}
 	}
 
-	void writeToFile(std::ofstream &fs)
+	std::string writeToFile(std::ofstream &fs)
 	{
 		assert(mcount > 0 && mpCam.use_count() != 0 && mpRot.use_count() != 0 && fs.is_open());
 
 		std::string typeName = mpCam->getTypeName();
 		fs << mcount << " " << typeName << std::endl;
-		fs << mpCam->fov << " " << mpCam->fx << " " << mpCam->fy << " " << mpCam->u0 << " " << mpCam->v0 << std::endl;
+		fs << mpCam->u0 << " " << mpCam->v0 << " " << mpCam->f << " " << mpCam->fov << " " << mpCam->maxRadius << " " << std::endl;
 		fs << mpRot->axisAngle[0] << " " << mpRot->axisAngle[1] << " " << mpRot->axisAngle[2] << std::endl;
 		for (size_t i = 0; i < mcount; i++)
 		{
@@ -62,16 +62,21 @@ public:
 			fs << spherePt1.x << " " << spherePt1.y << " " << spherePt1.z << " " <<
 				spherePt2.x << " " << spherePt2.y << " " << spherePt2.z << std::endl;
 		}
+
+		return typeName;
 	}
 
 
 	//note that the fs must be matched to the ModelDataProducer
-	void readFromFile(std::ifstream &fs)
+	std::string readFromFile(std::ifstream &fs)
 	{
 		std::string typeName;
 		fs >> mcount >> typeName;
-		mpCam = createCameraModel(typeName);
-		fs >> mpCam->fov >> mpCam->fx >> mpCam->fy >> mpCam->u0 >> mpCam->v0;
+		//the fourth here is maxRadius for General Model but fov for Classic Model
+		double u0, v0, f, fov, maxRadius;
+		fs >> u0 >> v0 >> f >> fov >> maxRadius;
+		mpCam = createCameraModel(typeName, u0, v0, f, fov, maxRadius);
+
 		mpRot = std::make_shared<Rotation>();
 		fs >> mpRot->axisAngle[0] >> mpRot->axisAngle[1] >> mpRot->axisAngle[2];
 		mvImgPt1.resize(mcount); 
@@ -86,6 +91,8 @@ public:
 			fs >> spherePt1.x >> spherePt1.y >> spherePt1.z >>
 				spherePt2.x >> spherePt2.y >> spherePt2.z;
 		}
+
+		return typeName;
 	}
 
 //private:
