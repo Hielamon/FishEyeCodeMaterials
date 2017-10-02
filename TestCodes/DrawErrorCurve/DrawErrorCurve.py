@@ -16,7 +16,7 @@ def showErrorDetail():
         for line in file.readlines():
             line = line.replace("\n", "").split(" ")
             iters.append(int(line[0]))
-            errors.append(float(line[1]))
+            errors.append(float(line[1]) / 300)
         plt.plot(iters, errors, curveStyle[idx], label = name)
 
         idx += 1
@@ -43,7 +43,7 @@ def showErrorWithNoise():
         for line in file.readlines():
             line = line.replace("\n", "").split(" ")
             iters.append(int(line[0]))
-            errors.append(float(line[1]))
+            errors.append(float(line[1]) / 300)
         plt.plot(iters, errors, curveStyle[idx], label = name)
 
         idx += 1
