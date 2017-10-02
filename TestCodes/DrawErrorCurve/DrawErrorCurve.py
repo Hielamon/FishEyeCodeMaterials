@@ -61,7 +61,7 @@ def showErrorWithNoise(typeError, type, title):
     plt.grid()
     plt.title(title)
     #plt.xlim(0.5, 9.5)
-    plt.ylim(min_error - 0.1, max_error + 0.1)
+    plt.ylim(max(min_error - 0.1, 0), max_error + 0.1)
     plt.xlabel(r"$\sigma$")
     plt.ylabel(r"error")
     ax = plt.gca()
