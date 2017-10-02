@@ -3,6 +3,8 @@
 #include "CameraModel.h"
 #include "Rotation.h"
 #include <fstream>
+#include <chrono>
+#include <random>
 
 class ModelDataProducer
 {
@@ -11,7 +13,7 @@ public:
 	~ModelDataProducer(){}
 
 	void produce(std::shared_ptr<CameraModel> &pCam, std::shared_ptr<Rotation> &pRot,
-				 int pairNum)
+				 int pairNum, double sigma, double translateLen)
 	{
 		assert(pairNum > 0 && pCam.use_count() != 0 && pRot.use_count() != 0);
 		mpCam = pCam;
@@ -22,6 +24,10 @@ public:
 		if (!mvSpherePt1.empty())mvSpherePt1.clear();
 		if (!mvSpherePt2.empty())mvSpherePt2.clear();
 
+		cv::Vec3d direction = RandomAxis();
+		cv::Vec3d translate = translateLen * direction;
+		
+
 		mcount = 0;
 		while (mcount < pairNum)
 		{
@@ -29,7 +35,7 @@ public:
 			double theta = CV_2PI * (rand() / double(RAND_MAX));
 
 			cv::Point3d spherePt(sin(phi)*cos(theta), sin(phi)*sin(theta), cos(phi));
-			cv::Point3d spherePtByRot = RotatePoint(spherePt, *pRot);
+			cv::Point3d spherePtByRot = RotatePoint(spherePt, *pRot) + cv::Point3d(translate);
 
 			double phiByRot = atan2(sqrt(spherePtByRot.x*spherePtByRot.x +
 										 spherePtByRot.y*spherePtByRot.y), spherePtByRot.z);
@@ -40,6 +46,10 @@ public:
 			pCam->mapS2I(spherePtByRot, imgPtByRot);
 			mvSpherePt1.push_back(spherePt);
 			mvSpherePt2.push_back(spherePtByRot);
+
+			imgPt += cv::Point2d(_randPixel(sigma), _randPixel(sigma));
+			imgPtByRot += cv::Point2d(_randPixel(sigma), _randPixel(sigma));
+
 			mvImgPt1.push_back(imgPt);
 			mvImgPt2.push_back(imgPtByRot);
 			mcount++;
@@ -101,4 +111,26 @@ public:
 	std::vector<cv::Point2d> mvImgPt1, mvImgPt2;
 	std::vector<cv::Point3d> mvSpherePt1, mvSpherePt2;
 	int mcount;
+
+private:
+	double _randNormal(double &start, double &end, double &mean, double &sigma)
+	{
+		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+		std::default_random_engine generator(seed);
+		std::normal_distribution<double> distribution(mean, sigma);
+		double result = distribution(generator);
+		while (result < start || result > end)
+		{
+			result = distribution(generator);
+		}
+
+		return result;
+	}
+
+	double _randPixel(double sigma)
+	{
+		
+		double ratio = rand() / double(RAND_MAX);
+		return ratio * (2 * sigma) - sigma;
+	}
 };

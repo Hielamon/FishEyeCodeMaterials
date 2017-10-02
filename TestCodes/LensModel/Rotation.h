@@ -9,7 +9,7 @@ public:
 	Rotation(double minAngle = 0.0, double maxAngle = CV_2PI)
 	{
 		assert(maxAngle >= minAngle);
-		cv::Vec3d axis = _randomAxis();
+		cv::Vec3d axis = RandomAxis();
 		double ratio = rand() / double(RAND_MAX);
 		double angle = minAngle + ratio * (maxAngle - minAngle);
 
@@ -55,14 +55,7 @@ public:
 	cv::Mat R;
 
 private:
-	cv::Vec3d _randomAxis()
-	{
-		double theta = CV_2PI * (rand() / double(RAND_MAX));
-		double phi = CV_PI * (rand() / double(RAND_MAX));
-		/*double theta = CV_PI * 0.5;
-		double phi = CV_PI * 0.5;*/
-		return cv::Vec3d(sin(phi)*cos(theta), sin(phi)*sin(theta), cos(phi));
-	}
+	
 
 	//this function is deprecated replaced by cv::Rodrigues
 	//axis-angle to rotation matrix formula follow

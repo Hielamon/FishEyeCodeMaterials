@@ -148,8 +148,11 @@ public:
                 Ap.at<double>(i, i) += lambda*D.at<double>(i);
             solve(Ap, v, d, DECOMP_EIG);
             subtract(x, d, xd);
-            if( !cb->compute(xd, rd, noArray()) )
-                return -1;
+			if (!cb->compute(xd, rd, noArray()))
+			{
+				rd = r.clone() * 10;
+			}
+
             nfJ++;
             double Sd = norm(rd, NORM_L2SQR);
             gemm(A, d, -1, v, 2, temp_d);
@@ -174,7 +177,8 @@ public:
                     double maxval = DBL_EPSILON;
                     for( i = 0; i < lx; i++ )
                         maxval = std::max(maxval, std::abs(Ap.at<double>(i,i)));
-                    lambda = lc = 1./maxval;
+					lambda = lc = std::max(1./maxval, 0.01);
+					//lambda = lc = 1./maxval;
                     nu *= 0.5;
                 }
                 lambda *= nu;

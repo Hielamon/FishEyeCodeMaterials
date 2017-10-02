@@ -3,6 +3,8 @@
 #include <random>
 #include <map>
 #include "../LensModel/ModelData.h"
+#include <sstream>
+#include <algorithm>
 
 using namespace cv;
 using namespace FishEye;
@@ -87,7 +89,7 @@ public:
 		
 		_err.create(pairNum * 3, 1, CV_64F);
 		cv::Mat err = _err.getMat();
-		_calcError(err);
+		if (!_calcError(err))return false;
 
 		cv::Mat err2 = _err.getMat();
 
@@ -95,7 +97,7 @@ public:
 		{
 			_Jac.create(pairNum * 3, mvpParameter.size(), CV_64F);
 			cv::Mat J = _Jac.getMat();
-			_calcJacobian(J);
+			if (!_calcJacobian(J))return false;
 		}
 
 		/*std::cout << "average error = " << norm(err) << std::endl;
@@ -112,27 +114,34 @@ private:
 			res.at<double>(i, 0) = (err2.at<double>(i, 0) - err1.at<double>(i, 0)) / h;
 	}
 
-	void _calcError(cv::Mat &err) const
+	bool _calcError(cv::Mat &err) const
 	{
 		int pairNum = mpModelData->mcount;
 		//err.create(pairNum * 3, 1, CV_64F);
+		err.setTo(0);
+		bool valid = true;
 
 		for (size_t i = 0, idx = 0; i < pairNum; i++, idx += 3)
 		{
 			cv::Point2d &imgPt1 = mpModelData->mvImgPt1[i], &imgPt2 = mpModelData->mvImgPt2[i];
 			//cv::Point3d &spherePt1 = mpModelData->mvSpherePt1[i], &spherePt2 = mpModelData->mvSpherePt2[i];
 			cv::Point3d spherePt1, spherePt2;
-			mpModel->mapI2S(imgPt1, spherePt1);
-			mpModel->mapI2S(imgPt2, spherePt2);
+
+			valid &= mpModel->mapI2S(imgPt1, spherePt1);
+			valid &= mpModel->mapI2S(imgPt2, spherePt2);
+
+			if (!valid)return false;
 
 			cv::Point3d spherePt1ByRot = RotatePoint(spherePt1, *(mpRot));
 			err.at<double>(idx, 0) = spherePt1ByRot.x - spherePt2.x;
 			err.at<double>(idx + 1, 0) = spherePt1ByRot.y - spherePt2.y;
 			err.at<double>(idx + 2, 0) = spherePt1ByRot.z - spherePt2.z;
 		}
+
+		return true;
 	}
 
-	void _calcJacobian(cv::Mat &jac) const
+	bool _calcJacobian(cv::Mat &jac) const
 	{
 		int pairNum = mpModelData->mcount;
 
@@ -143,6 +152,7 @@ private:
 		cv::Mat err1, err2;
 		err1.create(pairNum * 3, 1, CV_64F);
 		err2.create(pairNum * 3, 1, CV_64F);
+		bool valid = true;
 
 		for (size_t i = 0; i < mvpParameter.size(); i++)
 		{
@@ -151,18 +161,22 @@ private:
 			*(mvpParameter[i]) = originValue - step;
 			_updateParameters(i);
 
-			_calcError(err1);
+			valid &= _calcError(err1);
 
 			*(mvpParameter[i]) = originValue + step;
 			_updateParameters(i);
 
-			_calcError(err2);
+			valid &= _calcError(err2);
 
 			_calcDeriv(err1, err2, 2 * step, jac.col(i));
 
 			*(mvpParameter[i]) = originValue;
 			_updateParameters(i);
+
+			if (!valid)return false;
 		}
+
+		return true;
 	}
 
 	void _updateParameters(const int& idx) const
@@ -193,58 +207,135 @@ int main(int argc, char *argv[])
 	generalModelInfo["PolynomialRadius"] = cv::Vec2d(1.038552, -0.407288);
 	generalModelInfo["GeyerModel"] = cv::Vec2d(0.976517, 1.743803);
 
-	std::ifstream fs("../LensModel/SyntheticData.txt", std::ios::in);
-	int trialNum;
-	fs >> trialNum;
-	for (size_t i = 0; i < trialNum; i++)
+	std::map<std::string, std::vector<std::vector<double>>> vNoiseErrors;
+	vNoiseErrors["PolynomialAngle"] = std::vector<std::vector<double>>();
+	vNoiseErrors["PolynomialRadius"] = std::vector<std::vector<double>>();
+	vNoiseErrors["GeyerModel"] = std::vector<std::vector<double>>();
+
+	int maxNoise = 11;
+	for (size_t j = 0; j < maxNoise; j++)
 	{
 		std::cout << "\n\n\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
-		std::cout << "data trial No. = " << i << std::endl;
+		std::cout << "Noise Level = " << j << " Pixel" << std::endl;
 
-		std::shared_ptr<ModelDataProducer> pModelData = std::make_shared<ModelDataProducer>();
-		std::string typeName = pModelData->readFromFile(fs);
-		std::cout << "The prodecer model Info: " << typeName << std::endl;
-		std::cout << "fov : " << pModelData->mpCam->fov << "  f = " << pModelData->mpCam->f << std::endl;
-		std::cout << "rotateAngle : " << norm(pModelData->mpRot->axisAngle);
-		std::cout << "  rotateAxis : " << normalize(pModelData->mpRot->axisAngle) << std::endl;
+		std::map<std::string, std::vector<double>> noiseErrors;
+		noiseErrors["PolynomialAngle"] = std::vector<double>();
+		noiseErrors["PolynomialRadius"] = std::vector<double>();
+		noiseErrors["GeyerModel"] = std::vector<double>();
+		std::stringstream ioStr;
+		ioStr << "D:/Academic-Research/\"My Papers\"/FishEyeCodeMaterials/TestCodes/x64/Release/LensModel.exe -tl 0 -pairNum 300 -trialNum 500 -sigma " << j;
+		//ioStr << "D:/Academic-Research/\"My Papers\"/FishEyeCodeMaterials/TestCodes/x64/Debug/LensModel.exe -tl 0 -pairNum 300 -trialNum 500 -sigma " << j;
+		std::string command = ioStr.str();
 
-		double maxRadius = pModelData->mpCam->maxRadius;
-		double f = maxRadius / baseModel->maxRadius;
+		system(command.c_str());
 
-		std::map<std::string, cv::Vec2d>::iterator iter = generalModelInfo.begin();
-		for (; iter != generalModelInfo.end(); iter++)
+		std::ifstream fs("D:/Academic-Research/My Papers/FishEyeCodeMaterials/TestCodes/LensModel/SyntheticData.txt", std::ios::in);
+		int trialNum;
+		fs >> trialNum;
+		for (size_t i = 0; i < trialNum; i++)
 		{
-			//std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
-			//std::cout << "Model -------> " << iter->first << std::endl;
-			std::shared_ptr<CameraModel> pModel = std::static_pointer_cast<CameraModel>(
-				createCameraModel(iter->first, 0, 0, f, 0, maxRadius, iter->second[0], iter->second[1]));
+			std::shared_ptr<ModelDataProducer> pModelData = std::make_shared<ModelDataProducer>();
+			std::string typeName = pModelData->readFromFile(fs);
 
-			std::shared_ptr<Rotation> pRot = std::make_shared<Rotation>(CV_PI*0.5, CV_PI*0.5);
-			CalculateRotation(pModelData, pModel, pRot);
-			std::vector<uchar> vMask(pModel->vpParameter.size(), 1);
-			vMask[0] = vMask[1] = 0;
+			std::cout << "trial Num = " << j << "." << i << std::endl;
+			//if (i != 146)continue;
 
-			std::string logFileName = iter->first + "_error.txt";
-			//std::string logFileName;
-			Ptr<FishModelRefineCallback> cb = makePtr<FishModelRefineCallback>(pModelData, pModel, pRot, vMask);
-			Ptr<LMSolver> levmarpPtr = customCreateLMSolver(cb,	200, FLT_EPSILON, FLT_EPSILON, logFileName);
+			double maxRadius = pModelData->mpCam->maxRadius;
+			double f = maxRadius / baseModel->maxRadius;
 
-			//get the initial parameters in param;
-			//we use fov = 180бу and known circle radius to init the focol length and relative parameters
-			cv::Mat param(6, 1, CV_64FC1);
+			std::map<std::string, cv::Vec2d>::iterator iter = generalModelInfo.begin();
+			for (; iter != generalModelInfo.end(); iter++)
 			{
-				param.at<double>(0, 0) = *(pModel->vpParameter[2]);
-				param.at<double>(1, 0) = *(pModel->vpParameter[3]);
-				param.at<double>(2, 0) = *(pModel->vpParameter[4]);
-				param.at<double>(3, 0) = pRot->axisAngle[0];
-				param.at<double>(4, 0) = pRot->axisAngle[1];
-				param.at<double>(5, 0) = pRot->axisAngle[2];
-			}
+				//std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
+				//std::cout << "Model -------> " << iter->first << std::endl;
+				std::shared_ptr<CameraModel> pModel = std::static_pointer_cast<CameraModel>(
+					createCameraModel(iter->first, 0, 0, f, 0, maxRadius, iter->second[0], iter->second[1]));
 
-			levmarpPtr->run(param);
+				std::shared_ptr<Rotation> pRot = std::make_shared<Rotation>(CV_PI*0.5, CV_PI*0.5);
+				CalculateRotation(pModelData, pModel, pRot);
+				std::vector<uchar> vMask(pModel->vpParameter.size(), 1);
+				vMask[0] = vMask[1] = 0;
+
+				//std::string logFileName = iter->first + "_error.txt";
+				std::string logFileName;
+				Ptr<FishModelRefineCallback> cb = makePtr<FishModelRefineCallback>(pModelData, pModel, pRot, vMask);
+				Ptr<LMSolver> levmarpPtr = customCreateLMSolver(cb, 200, FLT_EPSILON, FLT_EPSILON, logFileName);
+
+				//get the initial parameters in param;
+				//we use fov = 180бу and known circle radius to init the focol length and relative parameters
+				cv::Mat param(6, 1, CV_64FC1);
+				{
+					param.at<double>(0, 0) = *(pModel->vpParameter[2]);
+					param.at<double>(1, 0) = *(pModel->vpParameter[3]);
+					param.at<double>(2, 0) = *(pModel->vpParameter[4]);
+					param.at<double>(3, 0) = pRot->axisAngle[0];
+					param.at<double>(4, 0) = pRot->axisAngle[1];
+					param.at<double>(5, 0) = pRot->axisAngle[2];
+				}
+
+				levmarpPtr->run(param);
+
+				cv::Mat err, J;
+				cb->compute(param, err, J);
+				double error = norm(err);
+				noiseErrors[iter->first].push_back(error);
+
+				std::cout << iter->first << " error : " << error << std::endl;
+			}
 		}
 
-		system("py -3 ../DrawErrorCurve/DrawErrorCurve.py");
+		std::map<std::string, std::vector<double>>::iterator nIter = noiseErrors.begin();
+		for (; nIter != noiseErrors.end(); nIter++)
+		{
+			vNoiseErrors[nIter->first].push_back(nIter->second);
+		}
 	}
+
+	
+	for (auto iter = vNoiseErrors.begin(); iter != vNoiseErrors.end(); iter++)
+	{
+		std::cout << iter->first << " : " << std::endl;
+		std::string dir = "D:/Academic-Research/My Papers/FishEyeCodeMaterials/TestCodes/OptimizeMetric/";
+		
+		
+		std::vector<double> meanErrors, medianErrors;
+		for (size_t i = 0; i < iter->second.size(); i++)
+		{
+			auto errsTmp = iter->second[i];
+			std::sort(errsTmp.begin(), errsTmp.end());
+			medianErrors.push_back(errsTmp[errsTmp.size() / 2]);
+			double sum = 0;
+			for (size_t k = 0; k < errsTmp.size(); k++)
+			{
+				sum += errsTmp[i];
+			}
+			meanErrors.push_back(sum / errsTmp.size());
+		}
+
+		std::string fName = dir + iter->first + "_Noise_meanErrors.txt";
+		std::ofstream fs(fName.c_str(), std::ios::out);
+		std::cout << "meanErrors : ";
+		for (size_t i = 0; i < meanErrors.size(); i++)
+		{
+			std::cout << meanErrors[i] << " ";
+			fs << i << " " << meanErrors[i] << std::endl;
+		}
+		std::cout << std::endl;
+		fs.close();
+
+		fName = dir + iter->first + "_Noise_medianErrors.txt";
+		fs.open(fName.c_str(), std::ios::out);
+		std::cout << "medianErrors : ";
+		for (size_t i = 0; i < medianErrors.size(); i++)
+		{
+			std::cout << medianErrors[i] << " ";
+			fs << i << " " << medianErrors[i] << std::endl;
+		}
+		std::cout << std::endl;
+		fs.close();
+
+
+	}
+
 	return 0;
 }
