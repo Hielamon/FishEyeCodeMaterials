@@ -199,7 +199,7 @@ private:
 
 };
 
-double ratio = 0.01;
+double ratio = 15, base = 15;
 
 
 void SaveErrorsToFile(std::map<std::string, std::vector<std::vector<double>>> &vErrors, const std::string &subName)
@@ -229,7 +229,7 @@ void SaveErrorsToFile(std::map<std::string, std::vector<std::vector<double>>> &v
 		for (size_t i = 0; i < meanErrors.size(); i++)
 		{
 			std::cout << meanErrors[i] << " ";
-			fs << i * ratio << " " << meanErrors[i] << std::endl;
+			fs << i * ratio + base << " " << meanErrors[i] << std::endl;
 		}
 		std::cout << std::endl;
 		fs.close();
@@ -240,7 +240,7 @@ void SaveErrorsToFile(std::map<std::string, std::vector<std::vector<double>>> &v
 		for (size_t i = 0; i < medianErrors.size(); i++)
 		{
 			std::cout << medianErrors[i] << " ";
-			fs << i * ratio << " " << medianErrors[i] << std::endl;
+			fs << i * ratio + base << " " << medianErrors[i] << std::endl;
 		}
 		std::cout << std::endl;
 		fs.close();
@@ -265,11 +265,11 @@ int main(int argc, char *argv[])
 	}
 	
 	
-	int maxLevel = 11;
+	int maxLevel = 20;
 	for (size_t j = 0; j < maxLevel; j++)
 	{
 		std::cout << "\n\n\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
-		std::cout << "Noise Level = " << j << " Pixel" << std::endl;
+		std::cout << "Pairs Num Level = " << j << " Pixel" << std::endl;
 
 		std::map<std::string, std::vector<double>> noiseErrors, noiseRotErrors;
 		{
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
 		}
 		
 		std::stringstream ioStr;
-		ioStr << "D:/Academic-Research/\"My Papers\"/FishEyeCodeMaterials/TestCodes/x64/Release/LensModel.exe -pairNum 300 -trialNum 1000 -sigma 0 -tl " << double(j) * ratio;
+		ioStr << "D:/Academic-Research/\"My Papers\"/FishEyeCodeMaterials/TestCodes/x64/Release/LensModel.exe -trialNum 1000 -sigma 0 -tl 0 -pairNum " << j*ratio + base;
 		//ioStr << "D:/Academic-Research/\"My Papers\"/FishEyeCodeMaterials/TestCodes/x64/Debug/LensModel.exe -tl 0 -pairNum 300 -trialNum 500 -sigma " << j;
 		std::string command = ioStr.str();
 
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
 			std::string typeName = pModelData->readFromFile(fs);
 
 			std::cout << "trial Num = " << j << "." << i << std::endl;
-			//if (i != 146)continue;
+			//if (i != 547)continue;
 
 			double maxRadius = pModelData->mpCam->maxRadius;
 			double f = maxRadius / baseModel->maxRadius;
@@ -358,8 +358,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	SaveErrorsToFile(vNoiseErrors, "Translate");
-	SaveErrorsToFile(vNoiseRotErrors, "TranslateRot");
+	SaveErrorsToFile(vNoiseErrors, "PairsNum");
+	SaveErrorsToFile(vNoiseRotErrors, "PairsNumRot");
 
 	return 0;
 }
