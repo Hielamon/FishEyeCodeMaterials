@@ -2,6 +2,11 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator, FuncFormatter
 import numpy as np
 
+def scaleFigure(fig, scale):
+    originSize = fig.get_size_inches()
+    originSize *= scale
+    fig.set_size_inches(originSize)
+
 def showErrorDetail():
     generalModelName = ["PolynomialAngle","PolynomialRadius","GeyerModel"]
     curveStyle = ["r-", "b-", "g-"]
@@ -35,6 +40,7 @@ def showErrorWithNoise(typeError, type, title):
     markerStyle = ["o", "s", "D"]
     errorPath = []
     fig = plt.figure()
+    scaleFigure(fig, 1.5)
     idx = 0
     max_error = 0
     min_error = 10
@@ -47,7 +53,7 @@ def showErrorWithNoise(typeError, type, title):
         for line in file.readlines():
             line = line.replace("\n", "").split(" ")
             lens.append(float(line[0]))
-            errTmp = float(line[1])
+            errTmp = float(line[1]) / 300
             if errTmp > max_error:
                 max_error = errTmp
             if errTmp < min_error:
@@ -61,7 +67,8 @@ def showErrorWithNoise(typeError, type, title):
     plt.grid()
     plt.title(title)
     #plt.xlim(0.5, 9.5)
-    plt.ylim(max(min_error - 0.1, 0), max_error + 0.1)
+    whiteH = max_error - min_error
+    plt.ylim(max(min_error - max_error / 8, 0), max_error + max_error / 4)
     plt.xlabel(r"$translate\ length$")
     plt.ylabel(r"error")
     ax = plt.gca()
