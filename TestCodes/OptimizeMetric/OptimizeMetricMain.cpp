@@ -199,6 +199,8 @@ private:
 
 };
 
+double ratio = 0.01;
+
 
 void SaveErrorsToFile(std::map<std::string, std::vector<std::vector<double>>> &vErrors, const std::string &subName)
 {
@@ -227,7 +229,7 @@ void SaveErrorsToFile(std::map<std::string, std::vector<std::vector<double>>> &v
 		for (size_t i = 0; i < meanErrors.size(); i++)
 		{
 			std::cout << meanErrors[i] << " ";
-			fs << i << " " << meanErrors[i] << std::endl;
+			fs << i * ratio << " " << meanErrors[i] << std::endl;
 		}
 		std::cout << std::endl;
 		fs.close();
@@ -238,12 +240,14 @@ void SaveErrorsToFile(std::map<std::string, std::vector<std::vector<double>>> &v
 		for (size_t i = 0; i < medianErrors.size(); i++)
 		{
 			std::cout << medianErrors[i] << " ";
-			fs << i << " " << medianErrors[i] << std::endl;
+			fs << i * ratio << " " << medianErrors[i] << std::endl;
 		}
 		std::cout << std::endl;
 		fs.close();
 	}
 }
+
+
 
 int main(int argc, char *argv[])
 {
@@ -260,9 +264,9 @@ int main(int argc, char *argv[])
 		vNoiseErrors["GeyerModel"] = vNoiseRotErrors["GeyerModel"] = std::vector<std::vector<double>>();
 	}
 	
-
-	int maxNoise = 11;
-	for (size_t j = 0; j < maxNoise; j++)
+	
+	int maxLevel = 11;
+	for (size_t j = 0; j < maxLevel; j++)
 	{
 		std::cout << "\n\n\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
 		std::cout << "Noise Level = " << j << " Pixel" << std::endl;
@@ -275,7 +279,7 @@ int main(int argc, char *argv[])
 		}
 		
 		std::stringstream ioStr;
-		ioStr << "D:/Academic-Research/\"My Papers\"/FishEyeCodeMaterials/TestCodes/x64/Release/LensModel.exe -tl 0 -pairNum 300 -trialNum 1000 -sigma " << j;
+		ioStr << "D:/Academic-Research/\"My Papers\"/FishEyeCodeMaterials/TestCodes/x64/Release/LensModel.exe -pairNum 300 -trialNum 1000 -sigma 0 -tl " << double(j) * ratio;
 		//ioStr << "D:/Academic-Research/\"My Papers\"/FishEyeCodeMaterials/TestCodes/x64/Debug/LensModel.exe -tl 0 -pairNum 300 -trialNum 500 -sigma " << j;
 		std::string command = ioStr.str();
 
@@ -354,8 +358,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	SaveErrorsToFile(vNoiseErrors, "Noise");
-	SaveErrorsToFile(vNoiseRotErrors, "NoiseRot");
+	SaveErrorsToFile(vNoiseErrors, "Translate");
+	SaveErrorsToFile(vNoiseRotErrors, "TranslateRot");
 
 	return 0;
 }

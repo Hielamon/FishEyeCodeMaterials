@@ -42,18 +42,18 @@ def showErrorWithNoise(typeError, type, title):
         nameTmp = "../OptimizeMetric/" + name + "_" + typeError + "_" + type + "Errors.txt"
         errorPath.append(nameTmp)
         file = open(nameTmp)
-        sigmas = []
+        lens = []
         errors = []
         for line in file.readlines():
             line = line.replace("\n", "").split(" ")
-            sigmas.append(int(line[0]))
+            lens.append(float(line[0]))
             errTmp = float(line[1])
             if errTmp > max_error:
                 max_error = errTmp
             if errTmp < min_error:
                 min_error = errTmp
             errors.append(errTmp)
-        plt.plot(sigmas, errors, curveStyle[idx], label = name, marker = markerStyle[idx])
+        plt.plot(lens, errors, curveStyle[idx], label = name, marker = markerStyle[idx])
 
         idx += 1
 
@@ -62,17 +62,19 @@ def showErrorWithNoise(typeError, type, title):
     plt.title(title)
     #plt.xlim(0.5, 9.5)
     plt.ylim(max(min_error - 0.1, 0), max_error + 0.1)
-    plt.xlabel(r"$\sigma$")
+    plt.xlabel(r"$translate\ length$")
     plt.ylabel(r"error")
     ax = plt.gca()
-    ax.xaxis.set_major_locator( MultipleLocator(1) )
-
-    ax.yaxis.set_minor_locator( MultipleLocator(0.1))
+    ax.xaxis.set_major_locator( MultipleLocator(lens[1] - lens[0]) )
 
     plt.show()
 
 if __name__ == "__main__":
-    showErrorWithNoise("Noise", "mean", "Mean Pixel Error Curves With Diff Noise Level")
-    showErrorWithNoise("Noise", "median", "Median Pixel Error Curves With Diff Noise Level")
-    showErrorWithNoise("NoiseRot", "mean", "Mean Rotation Error Curves With Diff Noise Level")
-    showErrorWithNoise("NoiseRot", "median", "Median Rotation Error Curves With Diff Noise Level")
+    #showErrorWithNoise("Noise", "mean", "Mean Pixel Error Curves With Diff Noise Level")
+    #showErrorWithNoise("Noise", "median", "Median Pixel Error Curves With Diff Noise Level")
+    #showErrorWithNoise("NoiseRot", "mean", "Mean Rotation Error Curves With Diff Noise Level")
+    #showErrorWithNoise("NoiseRot", "median", "Median Rotation Error Curves With Diff Noise Level")
+    showErrorWithNoise("Translate", "mean", "Mean Pixel Error Curves With Diff Translate Level")
+    showErrorWithNoise("Translate", "median", "Median Pixel Error Curves With Diff Translate Level")
+    showErrorWithNoise("TranslateRot", "mean", "Mean Rotation Error Curves With Diff Translate Level")
+    showErrorWithNoise("TranslateRot", "median", "Median Rotation Error Curves With Diff Translate Level")
