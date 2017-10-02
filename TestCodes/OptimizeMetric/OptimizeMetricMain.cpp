@@ -199,6 +199,52 @@ private:
 
 };
 
+
+void SaveErrorsToFile(std::map<std::string, std::vector<std::vector<double>>> &vErrors, const std::string &subName)
+{
+	std::string dir = "D:/Academic-Research/My Papers/FishEyeCodeMaterials/TestCodes/OptimizeMetric/";
+
+	for (auto iter = vErrors.begin(); iter != vErrors.end(); iter++)
+	{
+		std::cout << iter->first << " : " << std::endl;
+		std::vector<double> meanErrors, medianErrors;
+		for (size_t i = 0; i < iter->second.size(); i++)
+		{
+			auto errsTmp = iter->second[i];
+			std::sort(errsTmp.begin(), errsTmp.end());
+			medianErrors.push_back(errsTmp[errsTmp.size() / 2]);
+			double sum = 0;
+			for (size_t k = 0; k < errsTmp.size(); k++)
+			{
+				sum += errsTmp[k];
+			}
+			meanErrors.push_back(sum / errsTmp.size());
+		}
+
+		std::string fName = dir + iter->first + "_" + subName + "_meanErrors.txt";
+		std::ofstream fs(fName.c_str(), std::ios::out);
+		std::cout << "meanErrors : ";
+		for (size_t i = 0; i < meanErrors.size(); i++)
+		{
+			std::cout << meanErrors[i] << " ";
+			fs << i << " " << meanErrors[i] << std::endl;
+		}
+		std::cout << std::endl;
+		fs.close();
+
+		fName = dir + iter->first + "_" + subName + "_medianErrors.txt";
+		fs.open(fName.c_str(), std::ios::out);
+		std::cout << "medianErrors : ";
+		for (size_t i = 0; i < medianErrors.size(); i++)
+		{
+			std::cout << medianErrors[i] << " ";
+			fs << i << " " << medianErrors[i] << std::endl;
+		}
+		std::cout << std::endl;
+		fs.close();
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	std::shared_ptr<Equidistant> baseModel = std::make_shared<Equidistant>(0, 0, 1, CV_PI);
@@ -207,10 +253,13 @@ int main(int argc, char *argv[])
 	generalModelInfo["PolynomialRadius"] = cv::Vec2d(1.038552, -0.407288);
 	generalModelInfo["GeyerModel"] = cv::Vec2d(0.976517, 1.743803);
 
-	std::map<std::string, std::vector<std::vector<double>>> vNoiseErrors;
-	vNoiseErrors["PolynomialAngle"] = std::vector<std::vector<double>>();
-	vNoiseErrors["PolynomialRadius"] = std::vector<std::vector<double>>();
-	vNoiseErrors["GeyerModel"] = std::vector<std::vector<double>>();
+	std::map<std::string, std::vector<std::vector<double>>> vNoiseErrors, vNoiseRotErrors;
+	{
+		vNoiseErrors["PolynomialAngle"] = vNoiseRotErrors["PolynomialAngle"] = std::vector<std::vector<double>>();
+		vNoiseErrors["PolynomialRadius"] = vNoiseRotErrors["PolynomialRadius"] = std::vector<std::vector<double>>();
+		vNoiseErrors["GeyerModel"] = vNoiseRotErrors["GeyerModel"] = std::vector<std::vector<double>>();
+	}
+	
 
 	int maxNoise = 11;
 	for (size_t j = 0; j < maxNoise; j++)
@@ -218,12 +267,15 @@ int main(int argc, char *argv[])
 		std::cout << "\n\n\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
 		std::cout << "Noise Level = " << j << " Pixel" << std::endl;
 
-		std::map<std::string, std::vector<double>> noiseErrors;
-		noiseErrors["PolynomialAngle"] = std::vector<double>();
-		noiseErrors["PolynomialRadius"] = std::vector<double>();
-		noiseErrors["GeyerModel"] = std::vector<double>();
+		std::map<std::string, std::vector<double>> noiseErrors, noiseRotErrors;
+		{
+			noiseErrors["PolynomialAngle"] = noiseRotErrors["PolynomialAngle"] = std::vector<double>();
+			noiseErrors["PolynomialRadius"] = noiseRotErrors["PolynomialRadius"] = std::vector<double>();
+			noiseErrors["GeyerModel"] = noiseRotErrors["GeyerModel"] = std::vector<double>();
+		}
+		
 		std::stringstream ioStr;
-		ioStr << "D:/Academic-Research/\"My Papers\"/FishEyeCodeMaterials/TestCodes/x64/Release/LensModel.exe -tl 0 -pairNum 300 -trialNum 500 -sigma " << j;
+		ioStr << "D:/Academic-Research/\"My Papers\"/FishEyeCodeMaterials/TestCodes/x64/Release/LensModel.exe -tl 0 -pairNum 300 -trialNum 1000 -sigma " << j;
 		//ioStr << "D:/Academic-Research/\"My Papers\"/FishEyeCodeMaterials/TestCodes/x64/Debug/LensModel.exe -tl 0 -pairNum 300 -trialNum 500 -sigma " << j;
 		std::string command = ioStr.str();
 
@@ -280,6 +332,11 @@ int main(int argc, char *argv[])
 				double error = norm(err);
 				noiseErrors[iter->first].push_back(error);
 
+				double rotError = 0;
+				cv::Vec3d rotResult(param.at<double>(3, 0), param.at<double>(4, 0), param.at<double>(5, 0));
+				rotError = norm(rotResult - pModelData->mpRot->axisAngle);
+				noiseRotErrors[iter->first].push_back(rotError);
+
 				std::cout << iter->first << " error : " << error << std::endl;
 			}
 		}
@@ -289,53 +346,16 @@ int main(int argc, char *argv[])
 		{
 			vNoiseErrors[nIter->first].push_back(nIter->second);
 		}
+
+		nIter = noiseRotErrors.begin();
+		for (; nIter != noiseRotErrors.end(); nIter++)
+		{
+			vNoiseRotErrors[nIter->first].push_back(nIter->second);
+		}
 	}
 
-	
-	for (auto iter = vNoiseErrors.begin(); iter != vNoiseErrors.end(); iter++)
-	{
-		std::cout << iter->first << " : " << std::endl;
-		std::string dir = "D:/Academic-Research/My Papers/FishEyeCodeMaterials/TestCodes/OptimizeMetric/";
-		
-		
-		std::vector<double> meanErrors, medianErrors;
-		for (size_t i = 0; i < iter->second.size(); i++)
-		{
-			auto errsTmp = iter->second[i];
-			std::sort(errsTmp.begin(), errsTmp.end());
-			medianErrors.push_back(errsTmp[errsTmp.size() / 2]);
-			double sum = 0;
-			for (size_t k = 0; k < errsTmp.size(); k++)
-			{
-				sum += errsTmp[i];
-			}
-			meanErrors.push_back(sum / errsTmp.size());
-		}
-
-		std::string fName = dir + iter->first + "_Noise_meanErrors.txt";
-		std::ofstream fs(fName.c_str(), std::ios::out);
-		std::cout << "meanErrors : ";
-		for (size_t i = 0; i < meanErrors.size(); i++)
-		{
-			std::cout << meanErrors[i] << " ";
-			fs << i << " " << meanErrors[i] << std::endl;
-		}
-		std::cout << std::endl;
-		fs.close();
-
-		fName = dir + iter->first + "_Noise_medianErrors.txt";
-		fs.open(fName.c_str(), std::ios::out);
-		std::cout << "medianErrors : ";
-		for (size_t i = 0; i < medianErrors.size(); i++)
-		{
-			std::cout << medianErrors[i] << " ";
-			fs << i << " " << medianErrors[i] << std::endl;
-		}
-		std::cout << std::endl;
-		fs.close();
-
-
-	}
+	SaveErrorsToFile(vNoiseErrors, "Noise");
+	SaveErrorsToFile(vNoiseRotErrors, "NoiseRot");
 
 	return 0;
 }

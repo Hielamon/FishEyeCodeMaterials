@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 	std::ofstream fs("D:/Academic-Research/My Papers/FishEyeCodeMaterials/TestCodes/LensModel/SyntheticData.txt", std::ios::out);
 	fs << trialNum << std::endl;
 	ModelDataProducer producer;
-	//srand(time(NULL));
+	srand(time(NULL));
 
 	for (size_t i = 0; i < trialNum; i++)
 	{

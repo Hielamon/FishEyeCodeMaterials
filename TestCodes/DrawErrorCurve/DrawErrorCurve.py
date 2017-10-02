@@ -29,7 +29,7 @@ def showErrorDetail():
     plt.ylabel(r"error")
     plt.show()
 
-def showErrorWithNoise(type):
+def showErrorWithNoise(typeError, type, title):
     generalModelName = ["PolynomialAngle","PolynomialRadius","GeyerModel"]
     curveStyle = ["r-", "b-", "g-"]
     markerStyle = ["o", "s", "D"]
@@ -39,7 +39,7 @@ def showErrorWithNoise(type):
     max_error = 0
     min_error = 10
     for name in generalModelName:
-        nameTmp = "../OptimizeMetric/" + name + "_Noise_" + type + "Errors.txt"
+        nameTmp = "../OptimizeMetric/" + name + "_" + typeError + "_" + type + "Errors.txt"
         errorPath.append(nameTmp)
         file = open(nameTmp)
         sigmas = []
@@ -59,7 +59,7 @@ def showErrorWithNoise(type):
 
     plt.legend()
     plt.grid()
-    plt.title(type + " Error Curves With Diff Noise Level")
+    plt.title(title)
     #plt.xlim(0.5, 9.5)
     plt.ylim(min_error - 0.1, max_error + 0.1)
     plt.xlabel(r"$\sigma$")
@@ -72,5 +72,7 @@ def showErrorWithNoise(type):
     plt.show()
 
 if __name__ == "__main__":
-    showErrorWithNoise("mean")
-    showErrorWithNoise("median")
+    showErrorWithNoise("Noise", "mean", "Mean Pixel Error Curves With Diff Noise Level")
+    showErrorWithNoise("Noise", "median", "Median Pixel Error Curves With Diff Noise Level")
+    showErrorWithNoise("NoiseRot", "mean", "Mean Rotation Error Curves With Diff Noise Level")
+    showErrorWithNoise("NoiseRot", "median", "Median Rotation Error Curves With Diff Noise Level")
