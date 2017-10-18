@@ -606,9 +606,6 @@ namespace CircleFish
 				ss << name << i << "_"<< j<<".jpg";
 				cv::imwrite(ss.str(),warped_temp);
 			}
-						
-				
-				
 		}
 
 		std::vector<std::pair<cv::Rect2d, cv::Rect2d>> lap_rois;

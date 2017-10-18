@@ -1,7 +1,41 @@
 #include <FishStitcher.h>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
 
 namespace CircleFish
 {
+	bool SaveWarpedInfos(const std::vector<cv::Mat>& blend_warpeds, const std::vector<cv::Mat>& blend_warped_masks,
+						const std::vector<cv::Point> &blend_corners, const std::string &fName)
+	{
+		assert(blend_corners.size() == blend_warpeds.size() && blend_corners.size() == blend_warped_masks.size());
+		std::ofstream fs(fName, std::ios::out);
+		if (!fs.is_open())return false;
+		
+		std::stringstream ioStr;
+		std::string prefix = "Warped_", prefix_mask = "WarpedMask_", name;
+		for (size_t i = 0; i < blend_warpeds.size(); i++)
+		{
+			ioStr.str("");
+			ioStr << prefix << std::setw(4) << std::setfill('0') << i << ".jpg";
+			name = ioStr.str();
+			fs << name << " ";
+			cv::imwrite(name, blend_warpeds[i]);
+
+			ioStr.str("");
+			ioStr << prefix_mask << std::setw(4) << std::setfill('0') << i << ".jpg";
+			name = ioStr.str();
+			fs << name << " ";
+			cv::imwrite(name, blend_warped_masks[i]);
+
+			fs << blend_corners[i].x << " " << blend_corners[i].y << std::endl;
+		}
+
+		fs.close();
+	
+		return true;
+	}
+
 	FishStitcher::FishStitcher(const size_t result_height)
 	{
 		m_black = 15;
@@ -69,7 +103,7 @@ namespace CircleFish
 
 
 		//directly get the warped images for blending
-		AdvanceWarpFish advancewarpfish(m_blend_size.height, true);
+		AdvanceWarpFish advancewarpfish(m_blend_size.height, !true);
 		advancewarpfish.process(images, cameras, index, estiamte.m_is_ring, blend_warpeds, blend_warped_masks, blend_corners);
 
 
@@ -78,6 +112,8 @@ namespace CircleFish
 		std::cout << "Warp and FineMapping cost time : " << 1000 * (duration / cv::getTickFrequency()) << " ms " << std::endl;
 		duration = static_cast<double>(cv::getTickCount());
 #endif
+
+		//SaveWarpedInfos(blend_warpeds, blend_warped_masks, blend_corners, "warpedInfos.txt");
 
 		//Finish the finally blend manipulation
 		_blendCompute(blend_warpeds, blend_warped_masks, blend_corners, m_blend_size, result);

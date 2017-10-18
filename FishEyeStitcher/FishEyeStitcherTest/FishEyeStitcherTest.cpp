@@ -1,9 +1,10 @@
 #include "../FishEyeStitcher/include/FishStitcherMain.h"
 #include <iostream>
 
-std::string dir = "test1";
+//std::string dir = "test1";
+std::string dir = "D:/Academic-Research/Datas/ImageStitchingDatas/Hotel/test15";
 std::string name = "result.jpg";
-int result_h = 1000;
+int result_h = 4000;
 bool do_hdr = !true;
 int hdr_number = 3;
 std::string image_suffix = "jpg";
